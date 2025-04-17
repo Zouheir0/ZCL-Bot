@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage <%= guild.name %> - ZCL Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Manage Crates for <%= guild.name %></h1>
+
+    <form action="/dashboard/<%= guild.id %>/update" method="POST">
+      <% if (crates.length === 0) { %>
+        <p>No crates found for this server.</p>
+      <% } else { %>
+        <% crates.forEach((crate, i) => { %>
+          <div class="crate-section">
+            <h2>Crate: <input name="crates[<%= i %>][name]" value="<%= crate.name %>" required></h2>
+            <label>Rarity (%):</label>
+            <input type="number" name="crates[<%= i %>][rarity]" value="<%= crate.rarity %>" min="0" max="100" required>
+
+            <h3>Items:</h3>
+            <% crate.items.forEach((item, j) => { %>
+              <div class="item-group">
+                <input name="crates[<%= i %>][items][<%= j %>][name]" value="<%= item.name %>" placeholder="Item Name" required>
+                <input type="number" name="crates[<%= i %>][items][<%= j %>][chance]" value="<%= item.chance %>" placeholder="Chance (%)" min="0" max="100" required>
+              </div>
+            <% }) %>
+            <button type="button" onclick="addItem(<%= i %>)" class="btn small">Add Item</button>
+          </div>
+        <% }) %>
+        <button type="submit" class="btn">Save Changes</button>
+      <% } %>
+    </form>
+
+    <a href="/dashboard" class="btn logout">Back to Servers</a>
+  </div>
+
+  <script>
+    function addItem(crateIndex) {
+      const crateSection = document.querySelectorAll('.crate-section')[crateIndex];
+      const newItem = document.createElement('div');
+      newItem.className = 'item-group';
+      newItem.innerHTML = `
+        <input name="crates[${crateIndex}][items][new${Date.now()}][name]" placeholder="Item Name" required>
+        <input type="number" name="crates[${crateIndex}][items][new${Date.now()}][chance]" placeholder="Chance (%)" min="0" max="100" required>
+      `;
+      crateSection.appendChild(newItem);
+    }
+  </script>
+</body>
+</html>

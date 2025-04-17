@@ -1,92 +1,91 @@
-<<<<<<< HEAD:dashboard.js
-const express = require('express');
-const router = express.Router();
-const { QuickDB } = require('quick.db');
-const db = new QuickDB();
+const express = require("express");
+const session = require("express-session");
+const passport = require("passport");
+const Strategy = require("passport-discord").Strategy;
+const path = require("path");
+const dotenv = require("dotenv");
+const fetch = require("node-fetch");
 
-router.get('/:guildId', async (req, res) => {
-  const guildId = req.params.guildId;
-  const settings = await db.get(`settings_${guildId}`) || {
-    multiplier: 1,
-    creditsPerMsg: 10,
-    levelRewards: '',
-    crates: {}
-  };
+dotenv.config();
 
-  res.render('dashboard', { guildId, settings });
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Express session setup
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+}));
+
+// Passport setup
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+passport.use(new Strategy({
+  clientID: process.env.DISCORD_CLIENT_ID,
+  clientSecret: process.env.DISCORD_CLIENT_SECRET,
+  callbackURL: process.env.DISCORD_CALLBACK_URL,
+  scope: ['identify', 'guilds']
+}, (accessToken, refreshToken, profile, done) => {
+  process.nextTick(() => done(null, profile));
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Static files
+app.use(express.static(path.join(__dirname, "public")));
+app.set("view engine", "ejs");
+
+// Routes
+app.get("/", (req, res) => {
+  res.render("home", { user: req.user });
 });
 
-router.post('/:guildId', async (req, res) => {
-  const guildId = req.params.guildId;
-  const { multiplier, creditsPerMsg, levelRewards, crateData } = req.body;
+app.get("/login", passport.authenticate("discord"));
 
-  const crates = JSON.parse(crateData || '{}');
-
-  await db.set(`settings_${guildId}`, {
-    multiplier: parseFloat(multiplier),
-    creditsPerMsg: parseInt(creditsPerMsg),
-    levelRewards,
-    crates
-  });
-
-  res.redirect(`/dashboard/${guildId}`);
+app.get("/auth/discord/callback", passport.authenticate("discord", {
+  failureRedirect: "/"
+}), (req, res) => {
+  res.redirect("/dashboard");
 });
 
-=======
-const express = require('express');
-const router = express.Router();
-const { QuickDB } = require('quick.db');
-const db = new QuickDB();
-const checkAuth = require('../auth/checkAuth'); // Auth middleware
-
-// GET /dashboard/:guildID
-router.get('/:guildID', checkAuth, async (req, res) => {
-  const guildID = req.params.guildID;
-  const guild = req.user.guilds.find(g => g.id === guildID && (g.permissions & 0x8)); // Admin only
-
-  if (!guild) return res.redirect('/dashboard');
-
-  const crates = await db.get(`crates_${guildID}`) || [];
-
-  res.render('dashboard-settings', {
-    guild,
-    crates
-  });
+app.get("/logout", (req, res) => {
+  req.logout(() => res.redirect("/"));
 });
 
-// POST /dashboard/:guildID/update
-router.post('/:guildID/update', checkAuth, async (req, res) => {
-  const guildID = req.params.guildID;
-  const form = req.body.crates;
+// Middleware to ensure user is logged in
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.redirect("/login");
+}
 
-  let formattedCrates = [];
-
-  for (let key in form) {
-    const crate = form[key];
-    if (!crate.name) continue;
-
-    const items = [];
-
-    for (let itemKey in crate.items) {
-      const item = crate.items[itemKey];
-      if (!item.name || !item.chance) continue;
-
-      items.push({
-        name: item.name,
-        chance: parseFloat(item.chance)
-      });
-    }
-
-    formattedCrates.push({
-      name: crate.name,
-      rarity: parseFloat(crate.rarity),
-      items
+// Filter user's guilds where bot is in and user is admin
+app.get("/dashboard", ensureAuthenticated, async (req, res) => {
+  try {
+    const botGuildsReq = await fetch(`https://discord.com/api/v10/users/@me/guilds`, {
+      headers: {
+        Authorization: `Bot ${process.env.BOT_TOKEN}`
+      }
     });
-  }
 
-  await db.set(`crates_${guildID}`, formattedCrates);
-  res.redirect(`/dashboard/${guildID}`);
+    const userGuilds = req.user.guilds;
+    const botGuilds = await botGuildsReq.json();
+
+    const sharedGuilds = userGuilds.filter(g => {
+      const botInGuild = botGuilds.find(bg => bg.id === g.id);
+      return botInGuild && (g.permissions & 0x8); // ADMIN permission
+    });
+
+    res.render("dashboard", { user: req.user, guilds: sharedGuilds });
+  } catch (err) {
+    console.error("Error loading dashboard:", err);
+    res.redirect("/");
+  }
 });
 
->>>>>>> 693a26c (E):routes/dashboard.js
-module.exports = router;
+// Start server
+app.listen(port, () => {
+  console.log(`Dashboard is running at http://localhost:${port}`);
+});
