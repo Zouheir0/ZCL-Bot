@@ -2,54 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ZCL Bot Dashboard</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <script defer src="/js/script.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body>
-  <div class="container">
-    <h1>ZCL Bot Dashboard</h1>
-
-    <div class="menu">
-      <button onclick="openSection('crates')">Crates</button>
-      <button onclick="openSection('items')">Items</button>
-    </div>
-
-    <!-- Crate Editor -->
-    <div id="crates" class="section">
-      <h2>Manage Crates</h2>
-      <button onclick="addCrate()">+ Add Crate</button>
-      <div id="crateList"></div>
-    </div>
-
-    <!-- Item Editor -->
-    <div id="items" class="section" style="display:none;">
-      <h2>Manage Items</h2>
-      <button onclick="addItem()">+ Add Item</button>
-      <div id="itemList"></div>
-    </div>
-
-    <form id="saveForm" method="POST" action="/save-config">
-      <input type="hidden" name="config" id="configData">
-      <button type="submit" class="save-btn">Save Changes</button>
-    </form>
+<body class="bg-dark text-light">
+  <div class="container text-center mt-5">
+    <% if (user) { %>
+      <h1 class="display-4 mb-3">Welcome, <%= user.username %></h1>
+      <img src="<%= user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : 'https://cdn-icons-png.flaticon.com/512/147/147144.png' %>" class="rounded-circle mb-3" width="100" height="100" alt="Avatar">
+      <div class="d-grid gap-2 col-6 mx-auto mt-4">
+        <a class="btn btn-primary" href="/dashboard">Go to Dashboard</a>
+        <a class="btn btn-outline-light" href="/logout">Logout</a>
+      </div>
+    <% } else { %>
+      <h1 class="display-5">ZCL Bot Admin Panel</h1>
+      <p class="lead">Please log in with your Discord account to continue</p>
+      <a class="btn btn-success btn-lg mt-3" href="/login">Login with Discord</a>
+    <% } %>
   </div>
-
-  <template id="crateTemplate">
-    <div class="crate">
-      <input type="text" placeholder="Crate Name" class="crate-name" />
-      <input type="number" placeholder="Rarity %" class="crate-rarity" />
-      <button onclick="addCrateItem(this)">+ Add Item</button>
-      <div class="crate-items"></div>
-    </div>
-  </template>
-
-  <template id="itemTemplate">
-    <div class="item">
-      <input type="text" placeholder="Item Name" class="item-name" />
-      <input type="number" placeholder="Rarity %" class="item-rarity" />
-      <input type="text" placeholder="Description" class="item-description" />
-    </div>
-  </template>
 </body>
 </html>

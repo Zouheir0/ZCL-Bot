@@ -1,48 +1,55 @@
-// Function to fetch and populate current settings
-async function loadSettings(guildId) {
-  const res = await fetch(`/api/guild-settings?guildId=${guildId}`);
-  const settings = await res.json();
-
-  if (settings) {
-    document.getElementById('level-multiplier').value = settings.levelMultiplier;
-    document.getElementById('credits-per-message').value = settings.creditsPerMessage;
-    document.getElementById('crate-price').value = settings.cratePrice;
-    document.getElementById('reward-on-level').value = settings.rewardOnLevel;
-  }
+function openSection(id) {
+  document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
 }
 
-// Function to save updated settings
-async function saveSettings(guildId) {
-  const levelMultiplier = parseFloat(document.getElementById('level-multiplier').value);
-  const creditsPerMessage = parseInt(document.getElementById('credits-per-message').value);
-  const cratePrice = parseInt(document.getElementById('crate-price').value);
-  const rewardOnLevel = document.getElementById('reward-on-level').value;
+function addCrate() {
+  const template = document.getElementById('crateTemplate');
+  const clone = template.content.cloneNode(true);
+  document.getElementById('crateList').appendChild(clone);
+}
 
-  const res = await fetch('/api/save-settings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      guildId,
-      levelMultiplier,
-      creditsPerMessage,
-      cratePrice,
-      rewardOnLevel
-    })
+function addItem() {
+  const template = document.getElementById('itemTemplate');
+  const clone = template.content.cloneNode(true);
+  document.getElementById('itemList').appendChild(clone);
+}
+
+function addCrateItem(btn) {
+  const template = document.getElementById('itemTemplate');
+  const clone = template.content.cloneNode(true);
+  btn.parentElement.querySelector('.crate-items').appendChild(clone);
+}
+
+document.getElementById('saveForm').addEventListener('submit', function (e) {
+  const crates = [];
+  const crateElements = document.querySelectorAll('.crate');
+  
+  crateElements.forEach(crate => {
+    const name = crate.querySelector('.crate-name').value;
+    const rarity = parseFloat(crate.querySelector('.crate-rarity').value);
+    const items = [];
+
+    crate.querySelectorAll('.crate-items .item').forEach(item => {
+      items.push({
+        name: item.querySelector('.item-name').value,
+        rarity: parseFloat(item.querySelector('.item-rarity').value),
+        description: item.querySelector('.item-description').value
+      });
+    });
+
+    crates.push({ name, rarity, items });
   });
 
-  const data = await res.json();
-  if (data.message) {
-    alert('Settings saved!');
-  } else {
-    alert('Error saving settings');
-  }
-}
+  const items = [];
+  document.querySelectorAll('#itemList .item').forEach(item => {
+    items.push({
+      name: item.querySelector('.item-name').value,
+      rarity: parseFloat(item.querySelector('.item-rarity').value),
+      description: item.querySelector('.item-description').value
+    });
+  });
 
-// Assuming `guildId` is available, you can load and save settings
-const guildId = 'YOUR_GUILD_ID'; // Replace with actual guild ID
-loadSettings(guildId);
-
-// Save settings on button click
-document.getElementById('save-settings').addEventListener('click', () => saveSettings(guildId));
+  const config = { crates, items };
+  document.getElementById('configData').value = JSON.stringify(config);
+});
