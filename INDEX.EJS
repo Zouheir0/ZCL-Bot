@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ZCL Bot Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script defer src="/js/script.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>ZCL Bot Dashboard</h1>
+
+    <div class="menu">
+      <button onclick="openSection('crates')">Crates</button>
+      <button onclick="openSection('items')">Items</button>
+    </div>
+
+    <!-- Crate Editor -->
+    <div id="crates" class="section">
+      <h2>Manage Crates</h2>
+      <button onclick="addCrate()">+ Add Crate</button>
+      <div id="crateList"></div>
+    </div>
+
+    <!-- Item Editor -->
+    <div id="items" class="section" style="display:none;">
+      <h2>Manage Items</h2>
+      <button onclick="addItem()">+ Add Item</button>
+      <div id="itemList"></div>
+    </div>
+
+    <form id="saveForm" method="POST" action="/save-config">
+      <input type="hidden" name="config" id="configData">
+      <button type="submit" class="save-btn">Save Changes</button>
+    </form>
+  </div>
+
+  <template id="crateTemplate">
+    <div class="crate">
+      <input type="text" placeholder="Crate Name" class="crate-name" />
+      <input type="number" placeholder="Rarity %" class="crate-rarity" />
+      <button onclick="addCrateItem(this)">+ Add Item</button>
+      <div class="crate-items"></div>
+    </div>
+  </template>
+
+  <template id="itemTemplate">
+    <div class="item">
+      <input type="text" placeholder="Item Name" class="item-name" />
+      <input type="number" placeholder="Rarity %" class="item-rarity" />
+      <input type="text" placeholder="Description" class="item-description" />
+    </div>
+  </template>
+</body>
+</html>
